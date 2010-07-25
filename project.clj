@@ -1,5 +1,5 @@
-(defproject org.clojars.the-kenny/clojure-couchdb "0.2.2"
-  :description "Simple Clojure interface to Apache CouchDB, fork of the original project with function arguments instead of *server* and some other changes."
+(defproject clojure-couchdb "0.2.3"
+  :description "Clojure interface for Apache CouchDB"
   :dependencies [[org.clojure/clojure "1.1.0"]
                  [org.clojure/clojure-contrib "1.1.0"]
                  [clojure-http-client "1.0.1"]]
