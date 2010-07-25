@@ -370,7 +370,9 @@ http://wiki.apache.org/couchdb/HTTP_Bulk_Document_API"
   [server database document id]
   (when-let [database (validate-dbname database)]
     (let [document (do-get-doc database document)
-          response (stream-couch-request (str server database "/" (url-encode (as-str document)) "/" (url-encode (as-str id))))]
+          response (stream-couch-request (str (normalize-url server) database "/"
+					      (url-encode (as-str document)) "/"
+					      (url-encode (as-str id))))]
       {:body-stream (:body-seq response)
        :content-type ((:get-header response) "content-type")})))
 

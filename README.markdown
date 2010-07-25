@@ -66,7 +66,7 @@ Depends on clojure-contrib and [clojure-http-client](http://github.com/joubertne
     {:body-seq ("PAYLOAD"), :content-type "text/plain"}
 ###attachment-get-bin
     user=> (attachment-get-bin "http://localhost:5984/" "some-db" "my-doc" "new-attachment")
-    {:body-seq (), :content-type "image/png"}
+    {:body-seq #<byte[] [B@379d2f6b>, :content-type "image/png"}
 ###attachment-get-stream
     user=> (attachment-get-stream "http://localhost:5984/" "some-db" "my-doc" "new-attachment")
     {:body-stream #<HttpInputStream sun.net.www.protocol.http.HttpURLConnection$HttpInputStream@247ef45b>, :content-type "image/png"}
