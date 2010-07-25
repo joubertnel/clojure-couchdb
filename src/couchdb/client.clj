@@ -3,7 +3,7 @@
   (:use [clojure.contrib.java-utils :only [as-str]]
         [clojure.contrib.json.read :only [read-json *json-keyword-keys*]]
         [clojure.contrib.json.write :only [json-str]]
-        [clojure-http.client :only [request url-encode]]))
+        [clojure-http.client :only [request binary-request stream-request url-encode]]))
 
 (kit/deferror InvalidDatabaseName [] [database]
   {:msg (str "Invalid Database Name: " database)
@@ -37,10 +37,9 @@
    :unhandled (kit/throw-msg Exception)})
 
 
-(defn couch-request
-  [& args]
-  (let [response (apply request args)
-        result (try (assoc response :json
+(defn couch-request*
+  [response]
+  (let [result (try (assoc response :json
                            (binding [*json-keyword-keys* true]
                              (read-json (apply str (:body-seq response)))))
                     ;; if there's an error reading the JSON, just don't make a :json key
@@ -58,6 +57,16 @@
                      ServerError)
                    {:e (:json result)}))
       result)))
+
+(defn couch-request [& args]
+  (couch-request* (apply request args)))
+
+(defn bin-couch-request [& args]
+  (couch-request* (apply binary-request args)))
+
+(defn stream-couch-request [& args]
+  (couch-request* (apply stream-request args)))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;         Utilities           ;;
@@ -334,7 +343,8 @@ http://wiki.apache.org/couchdb/HTTP_Bulk_Document_API"
                      payload))
     id))
 
-(defn #^{:rebind true} attachment-get
+(defn attachment-get
+  "returns the attachment as a seq of strings in :body-seq"
   [server database document id]
   (when-let [database (validate-dbname database)]
     (let [document (do-get-doc database document)
@@ -344,7 +354,28 @@ http://wiki.apache.org/couchdb/HTTP_Bulk_Document_API"
       {:body-seq (:body-seq response)
        :content-type ((:get-header response) "content-type")})))
 
-(defn #^{:rebind true} attachment-delete
+(defn attachment-get-bin
+  "returns the attachment as a seq of byte-arrays in :body-seq"
+  [server database document id]
+  (when-let [database (validate-dbname database)] 
+    (let [document (do-get-doc database document)
+          response (bin-couch-request (str (normalize-url server) database "/"
+					   (url-encode (as-str document)) "/"
+					   (url-encode (as-str id))))]
+      {:body-seq (:body-seq response)
+       :content-type ((:get-header response) "content-type")})))
+
+(defn attachment-get-stream
+  "returns the attachment as an InputStream in :body-stream"
+  [server database document id]
+  (when-let [database (validate-dbname database)]
+    (let [document (do-get-doc database document)
+          response (stream-couch-request (str server database "/" (url-encode (as-str document)) "/" (url-encode (as-str id))))]
+      {:body-stream (:body-seq response)
+       :content-type ((:get-header response) "content-type")})))
+
+
+(defn attachment-delete
   [server database document id]
   (when-let [database (validate-dbname database)]
     (let [document (do-get-doc database document)
