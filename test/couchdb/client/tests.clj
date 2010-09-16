@@ -418,9 +418,7 @@
   (test-db2-fixture single-conflict-resolve-test)
   (test-db2-db3-fixture multiple-conflict-resolve-test)
   (cleanup)
-  ;;(error-checking)
-  ;;  (cleanup))
-
-  )
+  (error-checking)
+  (cleanup))
   
 
