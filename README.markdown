@@ -2,7 +2,7 @@
 
 Simple clojure library to interface with [Apache CouchDB](http://couchdb.apache.org/).
 
-Depends on clojure-contrib and [clojure-http-client](http://github.com/joubertnel/clojure-http-client/) (hopefully soon a part of contrib).
+Depends on clojure-contrib and [clj-http](http://github.com/clj-sys/clj-http).
 
 ---
 
@@ -147,16 +147,4 @@ Consider a show named forty-two in the design-document test:
     user=> (show-get "http://localhost:5984/" "some-db" "test" "forty-two" "")
     user=> ("<div>42</div>")
 
-##Contributors
 
-In no particular order:
-
-* [robinbrandt](http://github.com/robinbrandt/)
-* [Wojciech Kaczmarek](http://github.com/kunley)
-* [Moritz Ulrich](http://github.com/the-kenny/)
-* [Ryan Senior](http://github.com/senior)
-* [Joubert Nel](http://github.com/joubertnel)
-* [Joost Diepenmaat](http://github.com/joodie)
-
-
-If I forgot you here, please send me a message. I just can't track down all commiters of this project.
