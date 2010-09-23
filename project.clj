@@ -1,4 +1,4 @@
-(defproject clojure-couchdb "0.4.1"
+(defproject clojure-couchdb "0.4.2"
   :description "Clojure interface for Apache CouchDB"
   :dependencies [[org.clojure/clojure "1.2.0-master-SNAPSHOT"]
                  [org.clojure/clojure-contrib "1.2.0-SNAPSHOT"]

@@ -4,7 +4,8 @@
 	    [clj-http.client :as http-client])
   (:use [clojure.contrib.java-utils :only [as-str]]
         [clojure.contrib.json :only [read-json json-str]]
-	[clj-http.util :only [url-encode]]))
+	[clojure.contrib.str-utils :only [str-join]])
+  (:import (java.net URLEncoder)))
 
 (kit/deferror InvalidDatabaseName [] [database]
   {:msg (str "Invalid Database Name: " database)
@@ -103,6 +104,14 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;         Utilities           ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn url-encode
+  "Wrapper around java.net.URLEncoder returning a (UTF-8) URL encoded
+representation of argument, either a string or map."
+  [arg]
+  (if (map? arg)
+    (str-join \& (map #(str-join \= (map url-encode %)) arg))
+    (URLEncoder/encode (as-str arg) "UTF-8")))
 
 (defn valid-dbname?
   [database]
