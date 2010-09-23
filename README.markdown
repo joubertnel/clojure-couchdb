@@ -4,7 +4,6 @@ Simple clojure library to interface with [Apache CouchDB](http://couchdb.apache.
 
 Depends on clojure-contrib and [clj-http](http://github.com/clj-sys/clj-http).
 
----
 
 ##Database Functions:
 
