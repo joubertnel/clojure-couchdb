@@ -348,13 +348,20 @@ http://wiki.apache.org/couchdb/HTTP_Bulk_Document_API"
 ;;            Views            ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- make-couchdb-params [options & to-jsonify]
+  "Return a URL-encoded parameter string of 'options', JSON-transforming those parameters in 'to-json-encode'"
+  (let [jsonified-options (vals2json (select-keys options to-jsonify))
+	regular-options (apply dissoc options to-jsonify)]
+    (merge regular-options jsonified-options)))
+    
+
 (defn #^{:rebind true} view-get [server db design-doc view-name & [view-options]]
   (:json (couch-request {:url (str (normalize-url server) db "/_design/" design-doc "/_view/" view-name "?"
-				   (url-encode (vals2json view-options)))})))
+				   (url-encode (make-couchdb-params view-options :key :startkey :endkey)))})))
 
 (defn #^{:rebind true} view-temp-get [server db view-map & [view-options]]
   (:json (couch-request {:url (str (normalize-url server) db "/_temp_view?"
-				   (url-encode (vals2json view-options))),
+				   (url-encode (make-couchdb-params view-options :key :startkey :endkey)))
 			 :method :post,
 			 :content-type :json,
 			 :body (json-str view-map)})))
