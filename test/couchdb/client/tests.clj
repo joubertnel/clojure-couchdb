@@ -149,6 +149,31 @@
                {:body (line-seq (reader istream))
                 :content-type "text/clojure"}))))))
 
+(deftest views
+  (let [design-doc "viewdocs"]
+    (let [view-name "testview-all"
+	  js "function(doc) { emit(null, doc) }"]
+      ;; add view    
+      (is (not (nil? (couchdb/view-add +test-server+ +test-db+ design-doc view-name :map js))))
+      ;; list - one view
+      (is (-> (couchdb/view-list +test-server+ +test-db+ design-doc)
+	      count
+	      (= 1)))
+      ;; execute view
+      (is (-> (couchdb/view-get +test-server+ +test-db+ design-doc view-name)
+	      :rows
+	      count
+	      (= 2))))
+    (let [view-name "testview-some"
+	  js "function(doc) { if (doc._id == 'foobar') emit(1, doc) }"]
+      (is (not (nil? (couchdb/view-add +test-server+ +test-db+ design-doc view-name :map js))))
+      (is (-> (couchdb/view-get +test-server+ +test-db+ design-doc view-name)
+	      :rows
+	      count
+	      (= 1))))))
+
+  
+
 
 (deftest documents-passing-map
   ;; test that all the document-related functions work the same whether they
@@ -410,6 +435,7 @@
   (databases)
   (documents)
   (attachments)
+  (views)
   (documents-passing-map)
   (attachments-passing-map)
   (test-db2-fixture replication-test)

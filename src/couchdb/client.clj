@@ -145,6 +145,37 @@ representation of argument, either a string or map."
 (def #^{:private true} vals2json (partial vals-lift json-str))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;       Utility Macros       ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- vars-to-rebind []
+  (letfn [(rebind? [var]
+                   (let [m (meta var)]
+                    (and (= (:ns m)
+                            (find-ns 'couchdb.client))
+                         (:rebind m))))]
+   (filter rebind? (vals (ns-map *ns*)))))
+
+(defmacro with-server
+  "with-server rebinds all couchdb functions which take a server argument with
+the first argument, so you can call the functions without the server argument.
+
+Example:
+;(with-server http://localhost:5984
+;  (database-list))"
+
+  [server & body]
+  (let [ssharp (gensym "server-")]      ;necessary because nested-`
+   `(let [~ssharp ~server]
+      (with-bindings ~(apply hash-map
+                             (mapcat #(vector % `(partial (var-get ~%) ~ssharp))
+                             (vars-to-rebind)))
+        (do
+          ~@body)))))
+
+;; (with-server (apply str (concat "http://" "localhost" ":5984")) (database-list))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;          Databases          ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -348,12 +379,32 @@ http://wiki.apache.org/couchdb/HTTP_Bulk_Document_API"
 ;;            Views            ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- make-couchdb-params [options & to-jsonify]
-  "Return a URL-encoded parameter string of 'options', JSON-transforming those parameters in 'to-json-encode'"
+(defn make-couchdb-params [options & to-jsonify]
+  "Return a URL-encoded parameter string of 'options', JSON-transforming those parameters in 'to-jsonify'"
   (let [jsonified-options (vals2json (select-keys options to-jsonify))
 	regular-options (apply dissoc options to-jsonify)]
     (merge regular-options jsonified-options)))
-    
+
+
+(defn #^{:rebind true} view-list [server db design-doc]
+  "Get a list of views, including their definitions"
+  (:views (:json (couch-request {:url (str (normalize-url server) db "/_design/" design-doc) }))))
+
+
+(defn #^{:rebind true} view-add [server db design-doc view-name type js]
+  "Add a JavaScript view to a design document in a database. Type is one of :map or :reduce.
+   Overwrites any previous view of the same name and type."
+  (with-server server
+    (let [doc-path (str "_design/" design-doc)]
+      (kit/with-handler
+	(let [doc-content (document-get db doc-path)]
+	  (document-update db doc-path (assoc-in doc-content [:views view-name type] js)))
+	(kit/handle DocumentNotFound []
+	  (document-create db doc-path
+			   {:language "javascript"
+			    :views {(keyword view-name)
+				    {(keyword type) js}}}))))))
+	  
 
 (defn #^{:rebind true} view-get [server db design-doc view-name & [view-options]]
   (:json (couch-request {:url (str (normalize-url server) db "/_design/" design-doc "/_view/" view-name "?"
@@ -427,34 +478,5 @@ http://wiki.apache.org/couchdb/HTTP_Bulk_Document_API"
 			     design-doc "/_show/" show-name "/"
 			     id "?" (url-encode (vals2json show-options)))})))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;       Utility Macros       ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- vars-to-rebind []
-  (letfn [(rebind? [var]
-                   (let [m (meta var)]
-                    (and (= (:ns m)
-                            (find-ns 'couchdb.client))
-                         (:rebind m))))]
-   (filter rebind? (vals (ns-map *ns*)))))
-
-(defmacro with-server
-  "with-server rebinds all couchdb functions which take a server argument with
-the first argument, so you can call the functions without the server argument.
-
-Example:
-;(with-server http://localhost:5984
-;  (database-list))"
-
-  [server & body]
-  (let [ssharp (gensym "server-")]      ;necessary because nested-`
-   `(let [~ssharp ~server]
-      (with-bindings ~(apply hash-map
-                             (mapcat #(vector % `(partial (var-get ~%) ~ssharp))
-                             (vars-to-rebind)))
-        (do
-          ~@body)))))
-
-;; (with-server (apply str (concat "http://" "localhost" ":5984")) (database-list))
 
