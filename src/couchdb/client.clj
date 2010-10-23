@@ -442,16 +442,20 @@ http://wiki.apache.org/couchdb/HTTP_Bulk_Document_API"
     id))
 
 (defn attachment-get
-  "returns the attachment as a seq of strings in :body"
+  "Returns the attachment in :body
+   If the data is text/plain, :body is a seq of string, otherwise it is a byte array"
   [server database document id]
   (when-let [database (validate-dbname database)]
     (let [document (do-get-doc database document)
           response (couch-request {:url (str (normalize-url server) database "/"
 					     (url-encode (as-str document)) "/"
-					     (url-encode (as-str id)))})]
-					     
-      {:body (:body response)
-       :content-type (get (:headers response) "content-type")})))
+					     (url-encode (as-str id)))
+				   :as :byte-array})
+	  content-type (.toLowerCase (get (:headers response) "content-type"))]
+      {:body (if (.contains content-type "text/plain")
+	       (String. (:body response))
+	       (:body response))
+       :content-type content-type})))
 
 
 (defn attachment-delete
