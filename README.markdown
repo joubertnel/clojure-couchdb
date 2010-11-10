@@ -75,13 +75,29 @@ Depends on clojure-contrib and [clj-http](http://github.com/clj-sys/clj-http).
 
 ##View Functions
 
-For now, views should be created/edited outside of this API.
-
 In the following examples consider a simple view:
 
     "foobars": {
         "map": "function(doc) {  emit(doc.foobar, doc); }"
     }
+
+
+###view-add
+    user=> ; add a new (map) view 
+    user=> (let [js "function(doc) { if (doc._id == 'foobar') emit(doc.foobar, doc); }"]
+              (view-add "http://localhost:5984" "some-db" "my-design-doc" "foobars" :map js))
+
+    {:_rev "1-5b490dccbb45590ab56a234b51524e99", :_id "_design/my-design-doc", :language "javascript", 
+     :views {:foobars {:map "function(doc) { if (doc._id == 'foobar') emit(doc.foobar, doc); }"}}}
+
+          
+
+###view-list
+    user=> ; get a list of all the views for a design document
+    user=> (view-list "http://localhost:5984/" "some-db" "my-design-doc")
+
+    {:foobars {:map "function(doc) { if (doc._id == 'foobar') emit(doc.foobar, doc); }"}}
+
 
 ###view-get
     user=> ; create some docs
